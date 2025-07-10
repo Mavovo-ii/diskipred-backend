@@ -1,0 +1,8 @@
+# Node js
+.env
+node-modules/
+*.log
+
+# Editor/OS Files
+.DS_Store
+.vscode/
