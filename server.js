@@ -16,7 +16,7 @@ import protectedRoutes from "./routes/protected.js"
 const app = express()
 
 app.use(cors({
-  origin: 'http://localhost:5173',
+  origin: ['http://localhost:5173','https://diskipred.netlify.app'],
   credentials: true,
 }))
 dotenv.config()

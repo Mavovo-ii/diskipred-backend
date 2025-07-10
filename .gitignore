@@ -1,6 +1,6 @@
 # Node js
 .env
-node-modules/
+node_modules/
 *.log
 
 # Editor/OS Files
