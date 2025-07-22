@@ -12,6 +12,7 @@ const generateUID = () => {
 export const register = expressAsyncHandler(async (req, res) => {
   const { username, email, password } = req.body;
 
+  
   const lowerEmail = email.trim().toLowerCase();
 
   console.log('🚀 Raw password:', password);

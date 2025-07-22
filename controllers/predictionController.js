@@ -1,92 +1,113 @@
+
 import expressAsyncHandler from "express-async-handler";
-import Prediction from "../models/Prediction.js"
-import Match from "../models/Match.js"
-import User from "../models/User.js"
+import Prediction from "../models/Prediction.js";
+import Match from "../models/Match.js";
+import User from "../models/User.js";
 
-// Submit a prediction
-const submitPrediction = expressAsyncHandler(async (req, res) => {
-  const { userId, matchId, outcome } = req.body;
+// ✅ Submit multiple predictions (bulk)
+export const submitPredictions = expressAsyncHandler(async (req, res) => {
+  const predictions = req.body; // Array of { matchId, outcome }
+  const userId = req.user._id;
 
-  const existing = await Prediction.findOne({ userId, matchId });
-
-  if (existing) {
+  if (!Array.isArray(predictions) || predictions.length === 0) {
     res.status(400);
-    throw new Error('You already predicted this match');
+    throw new Error("No predictions provided");
   }
 
-  const match = await Match.findById(matchId);
-
-  if(!match) {
-    res.status(404)
-    throw new Error("Match not found")
+  const user = await User.findById(userId);
+  if (!user) {
+    res.status(401);
+    throw new Error("User not found");
   }
 
-  const prediction = await Prediction.create({
-    userId,
-    matchId,
-    outcome,
-    matchday: match.matchday
-  });
+  const savedPredictions = [];
+  const newMatchdays = new Set();
 
-  // Only count new matchday once
-if (user && match && user.loyaltyBonusGiven === false) {
-  // If this is the first time the user is playing in this matchday
-  if (!user.lastMatchday) user.lastMatchday = [];
+  for (const pred of predictions) {
+    const { matchId, outcome } = pred;
 
-  if (!user.lastMatchday.includes(match.matchday)) {
-    user.lastMatchday.push(match.matchday);
-    user.loyaltyStreakCount += 1;
+    const existing = await Prediction.findOne({ userId, matchId });
+    if (existing) continue;
 
-    // 🎉 Give bonus when they reach 5 different matchdays
-    if (user.loyaltyStreakCount === 5) {
-      user.loyaltyPoints += 10;
-      user.loyaltyBonusGiven = true; // so we don’t give it again
+    const match = await Match.findById(matchId);
+    if (!match) {
+      res.status(404);
+      throw new Error(`Match not found for id: ${matchId}`);
     }
 
-    await user.save();
+    const prediction = new Prediction({
+      userId,
+      matchId,
+      outcome,
+      matchday: match.matchday,
+    });
+
+    await prediction.save();
+    savedPredictions.push(prediction);
+    newMatchdays.add(match.matchday);
   }
-}
 
+  // Loyalty streak tracking
+  if (newMatchdays.size > 0 && user.loyaltyBonusGiven === false) {
+    if (!user.lastMatchday) user.lastMatchday = [];
 
-  // 🎁 Award loyalty points
-  const user = await User.findById(userId);
-  if (user) {
-    const loyaltyEarned = match.isHot ? 2 : 1;
-    user.loyaltyPoints = (user.loyaltyPoints || 0) + loyaltyEarned;
-    await user.save();
+    newMatchdays.forEach((md) => {
+      if (!user.lastMatchday.includes(md)) {
+        user.lastMatchday.push(md);
+        user.loyaltyStreakCount = (user.loyaltyStreakCount || 0) + 1;
+
+        if (user.loyaltyStreakCount === 5) {
+          user.loyaltyPoints = (user.loyaltyPoints || 0) + 10;
+          user.loyaltyBonusGiven = true;
+        }
+      }
+    });
   }
 
-  res.status(201).json(prediction);
+  // Award loyalty points for this batch
+  for (const pred of savedPredictions) {
+    const match = await Match.findById(pred.matchId);
+    if (match) {
+      const loyaltyEarned = match.isHot ? 2 : 1;
+      user.loyaltyPoints = (user.loyaltyPoints || 0) + loyaltyEarned;
+    }
+  }
+
+  await user.save();
+
+  res.status(201).json({
+    message: "Predictions saved successfully",
+    count: savedPredictions.length,
+    savedPredictions,
+  });
 });
 
-
-
-// Get all predictions for a user (filter by matchday)
-const getUserPredictions = expressAsyncHandler(async (req, res) => {
+// ✅ Get all predictions for a user (optionally filtered by matchday)
+export const getUserPredictions = expressAsyncHandler(async (req, res) => {
   const { matchday } = req.query;
   const filter = { userId: req.params.uid };
 
   if (matchday) {
-    filter.matchday = matchday; // If you add matchday to prediction schema later
+    filter.matchday = matchday;
   }
 
-  const predictions = await Prediction.find(filter).populate('matchId');
+  const predictions = await Prediction.find(filter).populate("matchId");
   res.status(200).json(predictions);
 });
 
-// Get all predictions for a match
-const getMatchPredictions = expressAsyncHandler(async (req, res) => {
-  const predictions = await Prediction.find({ matchId: req.params.matchId }).populate('userId');
+// ✅ Get all predictions for a match
+export const getMatchPredictions = expressAsyncHandler(async (req, res) => {
+  const predictions = await Prediction.find({ matchId: req.params.matchId }).populate("userId");
   res.status(200).json(predictions);
 });
 
-// Update points for a prediction (after scoring)
-const updatePredictionPoints = expressAsyncHandler(async (req, res) => {
+// ✅ Update awarded points after scoring
+export const updatePredictionPoints = expressAsyncHandler(async (req, res) => {
   const prediction = await Prediction.findById(req.params.id);
 
   if (!prediction) {
     res.status(404);
-    throw new Error('Prediction not found');
+    throw new Error("Prediction not found");
   }
 
   prediction.pointsAwarded = req.body.points;
@@ -95,9 +116,4 @@ const updatePredictionPoints = expressAsyncHandler(async (req, res) => {
   res.status(200).json(prediction);
 });
 
-export default {
-  submitPrediction,
-  getUserPredictions,
-  getMatchPredictions,
-  updatePredictionPoints
-}
+

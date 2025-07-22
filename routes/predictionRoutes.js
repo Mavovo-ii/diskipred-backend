@@ -1,5 +1,9 @@
 import express from "express";
-import predictionController from "../controllers/predictionController.js"
+import { submitPredictions, 
+    getUserPredictions, 
+    getMatchPredictions, 
+    updatePredictionPoints 
+} from "../controllers/predictionController.js"
 import { protectRoute } from "../middleware/authMiddleware.js"
 
 
@@ -8,15 +12,15 @@ const router = express.Router()
 // ROUTES
 
 // Submit a new prediction
-router.post('/', protectRoute, predictionController.submitPrediction);
+router.post('/', protectRoute, submitPredictions);
 
 // Get all predictions for a user
-router.get('/user/:uid', protectRoute, predictionController.getUserPredictions);
+router.get('/user/:uid', protectRoute, getUserPredictions);
 
 // Get all predictions for a specific match
-router.get('/match/:matchId', protectRoute, predictionController.getMatchPredictions);
+router.get('/match/:matchId', protectRoute, getMatchPredictions);
 
 // Update points for a prediction (internal use)
-router.put('/:id/points', protectRoute, predictionController.updatePredictionPoints);
+router.put('/:id/points', protectRoute, updatePredictionPoints);
 
 export default router;

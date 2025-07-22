@@ -16,7 +16,10 @@ import protectedRoutes from "./routes/protected.js"
 const app = express()
 
 app.use(cors({
-  origin: ['http://localhost:5173','https://diskipred.netlify.app'],
+  origin: ['https://diskipred.netlify.app', 'http://localhost:5173'],
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  exposedHeaders: ['Content-Type', 'Authorization'],
   credentials: true,
 }))
 dotenv.config()
@@ -33,6 +36,16 @@ app.use('/api/predictions', predictionRoutes)
 app.use('/api/prizes', prizeRoutes)
 app.use('/api/leaderboard', leaderboardRoutes)
 app.use('/api/teams', teamRoutes)
+
+app.use((err, req, res, next) => {
+  const statusCode = res.statusCode && res.statusCode !== 200 ? res.statusCode : 500;
+  res.status(statusCode);
+  res.json({
+    message: err.message,
+    // optional for debugging: stack: process.env.NODE_ENV === 'production' ? null : err.stack,
+  });
+});
+
 
 
 
