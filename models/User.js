@@ -24,6 +24,11 @@ const userSchema = mongoose.Schema({
         required: true
     },
 
+    isAdmin: {
+         type: Boolean,
+         default: false,
+    },
+
     // totalPoint : {
     //     type: Number,
     //     default: 0

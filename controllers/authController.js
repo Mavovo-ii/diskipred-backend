@@ -1,7 +1,8 @@
+// controllers/authController.js
 import expressAsyncHandler from 'express-async-handler';
 import bcrypt from 'bcrypt';
 import User from '../models/User.js';
-import generateToken from '../utils/Token.js'
+import generateToken from '../utils/generateToken.js';
 
 const generateUID = () => {
   const ts = Date.now().toString(36);
@@ -12,10 +13,7 @@ const generateUID = () => {
 export const register = expressAsyncHandler(async (req, res) => {
   const { username, email, password } = req.body;
 
-  
   const lowerEmail = email.trim().toLowerCase();
-
-  console.log('🚀 Raw password:', password);
 
   const existing = await User.findOne({ email: lowerEmail });
   if (existing) {
@@ -26,32 +24,33 @@ export const register = expressAsyncHandler(async (req, res) => {
   const salt = await bcrypt.genSalt(10);
   const hashedPassword = await bcrypt.hash(password, salt);
 
-  console.log('🔐 Hashed password BEFORE save:', hashedPassword);
+  const isAdmin = lowerEmail === 'mavovo.mkhize@yahoo.com';
 
   const user = new User({
     username,
     email: lowerEmail,
     password: hashedPassword,
+    isAdmin,
     uid: generateUID(),
   });
 
   await user.save();
 
-  console.log('✅ Saved user password hash:', user.password);
-
   res.status(201).json({
     message: 'User registered successfully',
-    user: { id: user._id, username: user.username, email: user.email, uid: user.uid },
+    token: generateToken(user),
+    user: {
+      id: user._id,
+      username: user.username,
+      email: user.email,
+      isAdmin: user.isAdmin,
+      uid: user.uid,
+    },
   });
 });
 
-
-// Log user in
-
 export const login = expressAsyncHandler(async (req, res) => {
   const { email, password } = req.body;
-
-  console.log('▶️ Login input password:', password);
 
   const user = await User.findOne({ email: email.trim().toLowerCase() });
 
@@ -60,11 +59,7 @@ export const login = expressAsyncHandler(async (req, res) => {
     throw new Error('Invalid email or password (user not found)');
   }
 
-  console.log('🧾 Stored user object:', user);
-  console.log('🔐 Stored password hash:', user.password);
-
   const isMatch = await bcrypt.compare(password, user.password);
-  console.log('✅ bcrypt.compare result:', isMatch);
 
   if (!isMatch) {
     res.status(401);
@@ -73,12 +68,14 @@ export const login = expressAsyncHandler(async (req, res) => {
 
   res.json({
     message: 'Login successful',
-    token: generateToken(user._id),
+    token: generateToken(user),
     user: {
       id: user._id,
       username: user.username,
       email: user.email,
+      isAdmin: user.isAdmin,
       uid: user.uid,
     },
   });
 });
+
