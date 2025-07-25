@@ -15,6 +15,7 @@ import protectedRoutes from "./routes/protected.js"
 
 const app = express()
 
+
 app.use(cors({
   origin: ['https://diskipred.netlify.app', 'http://localhost:5173'],
   methods: ['GET', 'POST', 'PUT', 'DELETE'],

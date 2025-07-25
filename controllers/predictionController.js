@@ -5,17 +5,27 @@ import Match from "../models/Match.js";
 import User from "../models/User.js";
 
 
-// Get user predictions
+//Get user predictions
+//✅Get logged-in user's predictions
 export const getMyPredictions = expressAsyncHandler(async (req, res) => {
-  const predictions = await Prediction.find({ user: req.user._id })
+
+  const predictions = await Prediction.find({ userId: req.user._id })
     .populate({
-      path: "match",
-      populate: { path: "homeTeam awayTeam", select: "name shortName" },
+      path: "matchId",
+      populate: [
+        { path: "homeTeam", select: "name shortName" },
+        { path: "awayTeam", select: "name shortName" },
+      ],
     })
     .sort({ createdAt: -1 });
 
   res.status(200).json(predictions);
 });
+
+
+
+
+
 
 
 // ✅ Submit multiple predictions (bulk)

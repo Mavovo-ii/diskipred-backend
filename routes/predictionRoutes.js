@@ -15,6 +15,7 @@ const router = express.Router()
 // Submit a new prediction
 router.post('/', protectRoute, submitPredictions);
 
+
 // Get all predictions for a user
 router.get('/me', protectRoute, getMyPredictions);
 
