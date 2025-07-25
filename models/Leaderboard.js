@@ -10,7 +10,7 @@ const leaderboardSchema = new mongoose.Schema({
     players : [
         {
             userId :{ type: mongoose.Schema.Types.ObjectId, ref: 'User' },
-            points: { type: Number, required: true },
+            //points: { type: Number, required: true },
             rank: { type: Number, required: true}
         }
     ],

@@ -1,6 +1,7 @@
 import express from "express";
 import { submitPredictions, 
-    getUserPredictions, 
+    getMyPredictions, 
+    getUserPredictions,
     getMatchPredictions, 
     updatePredictionPoints 
 } from "../controllers/predictionController.js"
@@ -15,6 +16,11 @@ const router = express.Router()
 router.post('/', protectRoute, submitPredictions);
 
 // Get all predictions for a user
+router.get('/me', protectRoute, getMyPredictions);
+
+// Get all predictions for a specific user
+// This route is for admin use to fetch predictions of any user
+// It should be protected to ensure only authorized users can access it
 router.get('/user/:uid', protectRoute, getUserPredictions);
 
 // Get all predictions for a specific match

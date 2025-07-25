@@ -4,6 +4,20 @@ import Prediction from "../models/Prediction.js";
 import Match from "../models/Match.js";
 import User from "../models/User.js";
 
+
+// Get user predictions
+export const getMyPredictions = expressAsyncHandler(async (req, res) => {
+  const predictions = await Prediction.find({ user: req.user._id })
+    .populate({
+      path: "match",
+      populate: { path: "homeTeam awayTeam", select: "name shortName" },
+    })
+    .sort({ createdAt: -1 });
+
+  res.status(200).json(predictions);
+});
+
+
 // ✅ Submit multiple predictions (bulk)
 export const submitPredictions = expressAsyncHandler(async (req, res) => {
   const predictions = req.body; // Array of { matchId, outcome }
