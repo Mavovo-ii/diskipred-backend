@@ -1,14 +1,10 @@
-
 import expressAsyncHandler from "express-async-handler";
 import Prediction from "../models/Prediction.js";
 import Match from "../models/Match.js";
 import User from "../models/User.js";
 
-
-//Get user predictions
-//✅Get logged-in user's predictions
+// Get logged-in user's predictions
 export const getMyPredictions = expressAsyncHandler(async (req, res) => {
-
   const predictions = await Prediction.find({ userId: req.user._id })
     .populate({
       path: "matchId",
@@ -22,13 +18,7 @@ export const getMyPredictions = expressAsyncHandler(async (req, res) => {
   res.status(200).json(predictions);
 });
 
-
-
-
-
-
-
-// ✅ Submit multiple predictions (bulk)
+// Submit multiple predictions (bulk)
 export const submitPredictions = expressAsyncHandler(async (req, res) => {
   const predictions = req.body; // Array of { matchId, outcome }
   const userId = req.user._id;
@@ -106,7 +96,7 @@ export const submitPredictions = expressAsyncHandler(async (req, res) => {
   });
 });
 
-// ✅ Get all predictions for a user (optionally filtered by matchday)
+// Get all predictions for a user (optionally filtered by matchday)
 export const getUserPredictions = expressAsyncHandler(async (req, res) => {
   const { matchday } = req.query;
   const filter = { userId: req.params.uid };
@@ -119,13 +109,13 @@ export const getUserPredictions = expressAsyncHandler(async (req, res) => {
   res.status(200).json(predictions);
 });
 
-// ✅ Get all predictions for a match
+// Get all predictions for a match
 export const getMatchPredictions = expressAsyncHandler(async (req, res) => {
   const predictions = await Prediction.find({ matchId: req.params.matchId }).populate("userId");
   res.status(200).json(predictions);
 });
 
-// ✅ Update awarded points after scoring
+// Update awarded points after scoring
 export const updatePredictionPoints = expressAsyncHandler(async (req, res) => {
   const prediction = await Prediction.findById(req.params.id);
 
@@ -139,5 +129,36 @@ export const updatePredictionPoints = expressAsyncHandler(async (req, res) => {
 
   res.status(200).json(prediction);
 });
+
+const outcomeMap = {
+  "Home Win": "home",
+  "Draw": "draw",
+  "Away Win": "away",
+};
+
+// Score all predictions for finished matches
+export const scorePredictions = expressAsyncHandler(async (req, res) => {
+  const finishedMatches = await Match.find({ status: "FT" });
+
+  let updatedCount = 0;
+
+  for (const match of finishedMatches) {
+    const predictions = await Prediction.find({ matchId: match._id });
+
+    for (const prediction of predictions) {
+      const actualOutcome = outcomeMap[match.outcome];
+      const points = prediction.outcome === actualOutcome ? 1 : 0;
+
+      if (prediction.pointsAwarded !== points) {
+        prediction.pointsAwarded = points;
+        await prediction.save();
+        updatedCount++;
+      }
+    }
+  }
+
+  res.json({ message: `Updated points for ${updatedCount} predictions` });
+});
+
 
 

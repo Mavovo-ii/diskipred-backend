@@ -29,6 +29,11 @@ const userSchema = mongoose.Schema({
          default: false,
     },
 
+    balance: {
+        type: Number,
+        default: 0
+    },
+
     // totalPoint : {
     //     type: Number,
     //     default: 0
@@ -37,27 +42,6 @@ const userSchema = mongoose.Schema({
     // hasClaimedPrize : {
     //     type: Boolean,
     //     default:false
-    // },
-
-    // loyaltyStreak : {
-    //     type: Number,
-    //     default: []
-    // },
-
-    // lastMatchday: {
-    //    type: [String],
-    //    default: []
-    // },
-
-
-    // loyaltyPoints : {
-    //     type: Number,
-    //     default: 0
-    // },
-
-    // loyaltyBonusGiven : {
-    //     type: Boolean,
-    //     default: false
     // },
 
     createdAt : {

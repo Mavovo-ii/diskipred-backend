@@ -1,11 +1,19 @@
+
+// cronJobs/startCronJobs.js
 import nodeCron from "node-cron";
-import scoreEndedMatches from "../scoreEndedMatches.js";
+import { fetchFinishedMatchResults } from "../fetchFinishedMatchResults.js";
+import { scoreEndedMatches } from "../scoreEndedMatches.js";
 
 export const startCronJobs = () => {
+  nodeCron.schedule("0 23 * * *", async () => {
+    console.log("📅 Auto job triggered @ 11:00PM");
 
-    //Runs everyday @ 23:00
-    nodeCron.schedule("0 23 * * *", async () => {
-        console.log("Auto scoring job triggered @ 11:00PM");
-        await scoreEndedMatches();
-    });
-}
+    try {
+      await fetchFinishedMatchResults();     // ✅ Fetch results first
+      await scoreEndedMatches();             // ✅ Then score predictions
+      console.log("✅ Auto fetch + scoring done.");
+    } catch (err) {
+      console.error("❌ Cron job failed:", err.message);
+    }
+  });
+};

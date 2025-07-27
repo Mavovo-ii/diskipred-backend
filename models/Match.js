@@ -1,59 +1,94 @@
+
 import mongoose from "mongoose";
 
 const matchSchema = mongoose.Schema({
-    league : {
-        type: String,
-        required: true
-    },
+  league: {
+    type: String,
+    required: true,
+  },
 
-    homeTeam : {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "Team",
-        required: true
-    },
-    
+  homeTeam: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Team",
+    required: true,
+  },
 
-    awayTeam : {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "Team",
-        required: true
-    },
+  awayTeam: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Team",
+    required: true,
+  },
 
-    matchdate : {
-        type: Date,
-        required: true
-    },
+  isScored: {
+    type: Boolean,
+    default: false,
+  },
 
-    isHot : {
-        type: Boolean,
-        default: true
-    },
+  matchdate: {
+    type: Date,
+    required: true,
+  },
 
-    hasStarted : {
-        type: Boolean,
-        default: false
-    },
+  matchtime: {
+    type: String,
+    required: true,
+  },
 
-    hasEnded : {
-        type: Boolean,
-        default: false
-    },
+  matchday: {
+    type: Date,
+    required: true,
+  },
 
-    matchtime : {
-        type: String,
-        required: true
-    },
+  isHot: {
+    type: Boolean,
+    default: true,
+  },
 
-    matchday: {
-        type: Date,
-        required: true
-    },
+  hasStarted: {
+    type: Boolean,
+    default: false,
+  },
 
-    createdAt : {
-        type: Date,
-        default: Date.now
-    }
+  hasEnded: {
+    type: Boolean,
+    default: false,
+  },
 
-})
+  // ✅ NEW: API-Football match ID
+  apiId: {
+    type: Number,
+    required: true,
+    unique: true,
+  },
 
-export default mongoose.model("Match", matchSchema)
+  // ✅ NEW: Match status from API-Football ("NS", "FT", etc.)
+  status: {
+    type: String,
+    default: "NS",
+  },
+
+  // ✅ NEW: Final scores
+  homeScore: {
+    type: Number,
+    default: null,
+  },
+
+  awayScore: {
+    type: Number,
+    default: null,
+  },
+
+  //Outcome of the match ("Home Win", "Draw", "Away Win")
+  outcome: {
+    type: String,
+    enum: ["Home Win", "Draw", "Away Win", null],
+    default: null,
+  },
+
+  createdAt: {
+    type: Date,
+    default: Date.now,
+  },
+});
+
+export default mongoose.model("Match", matchSchema);

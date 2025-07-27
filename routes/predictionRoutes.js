@@ -3,7 +3,8 @@ import { submitPredictions,
     getMyPredictions, 
     getUserPredictions,
     getMatchPredictions, 
-    updatePredictionPoints 
+    updatePredictionPoints,
+    scorePredictions 
 } from "../controllers/predictionController.js"
 import { protectRoute } from "../middleware/authMiddleware.js"
 
@@ -15,6 +16,7 @@ const router = express.Router()
 // Submit a new prediction
 router.post('/', protectRoute, submitPredictions);
 
+router.get('/score', scorePredictions);
 
 // Get all predictions for a user
 router.get('/me', protectRoute, getMyPredictions);
