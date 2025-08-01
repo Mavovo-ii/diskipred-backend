@@ -1,15 +1,28 @@
+
+import qs from 'querystring';
 import asyncHandler from 'express-async-handler';
+import dotenv from 'dotenv';
 import User from '../models/User.js';
 import Transaction from '../models/transactionModel.js';
 
-
-
+dotenv.config();
 
 const PAYFAST_MERCHANT_ID = process.env.PAYFAST_MERCHANT_ID;
 const PAYFAST_MERCHANT_KEY = process.env.PAYFAST_MERCHANT_KEY;
-const RETURN_URL = process.env.RETURN_URL;
-const CANCEL_URL = process.env.CANCEL_URL;
-const NOTIFY_URL = process.env.NOTIFY_URL;
+
+const isProd = process.env.NODE_ENV === 'production';
+
+const RETURN_URL = isProd
+  ? process.env.RETURN_URL
+  : 'http://localhost:5173/payment-success';
+
+const CANCEL_URL = isProd
+  ? process.env.CANCEL_URL
+  : 'http://localhost:5173/payment-cancel';
+
+const NOTIFY_URL = isProd
+  ? process.env.NOTIFY_URL
+  : 'http://localhost:3000/api/payments/notify';
 
 console.log("💬 PAYFAST_MERCHANT_ID:", PAYFAST_MERCHANT_ID);
 console.log("💬 PAYFAST_MERCHANT_KEY:", PAYFAST_MERCHANT_KEY);
@@ -17,36 +30,34 @@ console.log("💬 RETURN_URL:", RETURN_URL);
 console.log("💬 CANCEL_URL:", CANCEL_URL);
 console.log("💬 NOTIFY_URL:", NOTIFY_URL);
 
-// ✅ INITIATE PAYFAST PAYMENT (HTML redirect flow)
+// ✅ Initiate Payfast Payment - returns redirect URL
 export const initiatePayfastPayment = asyncHandler(async (req, res) => {
-  const { amount, userEmail, userId } = req.body;
+  const { amount } = req.body;
+  const user = req.user;
 
-  if (!amount || !userEmail || !userId) {
-    return res.status(400).json({ message: 'Missing payment details' });
+  if (!amount || !user) {
+    return res.status(400).json({ message: 'Missing payment info' });
   }
 
-  const html = `
-    <html>
-      <body onload="document.forms[0].submit()">
-        <form action="https://sandbox.payfast.co.za/eng/process" method="post">
-          <input type="hidden" name="merchant_id" value="${PAYFAST_MERCHANT_ID}" />
-          <input type="hidden" name="merchant_key" value="${PAYFAST_MERCHANT_KEY}" />
-          <input type="hidden" name="return_url" value="${RETURN_URL}" />
-          <input type="hidden" name="cancel_url" value="${CANCEL_URL}" />
-          <input type="hidden" name="notify_url" value="${NOTIFY_URL}" />
-          <input type="hidden" name="amount" value="${parseFloat(amount).toFixed(2)}" />
-          <input type="hidden" name="item_name" value="DiskiPred Top-up" />
-          <input type="hidden" name="email_address" value="${userEmail}" />
-          <input type="hidden" name="custom_str1" value="${userId}" />
-        </form>
-      </body>
-    </html>
-  `;
+  const paymentData = {
+    merchant_id: PAYFAST_MERCHANT_ID,
+    merchant_key: PAYFAST_MERCHANT_KEY,
+    return_url: RETURN_URL,
+    cancel_url: CANCEL_URL,
+    notify_url: NOTIFY_URL,
+    amount: parseFloat(amount).toFixed(2),
+    item_name: 'DiskiPred Top-up',
+    email_address: user.email,
+    custom_str1: user._id.toString(),
+  };
 
-  return res.status(200).send(html);
+  const queryString = qs.stringify(paymentData);
+  const redirectUrl = `https://sandbox.payfast.co.za/eng/process?${queryString}`;
+
+  return res.status(200).json({ redirectUrl });
 });
 
-// ✅ PAYFAST IPN HANDLER
+// ✅ Handle IPN Notifications
 export const payfastNotifyHandler = asyncHandler(async (req, res) => {
   const ipnData = req.body;
 
@@ -87,4 +98,3 @@ export const payfastNotifyHandler = asyncHandler(async (req, res) => {
     res.status(500).send("Server error");
   }
 });
-
