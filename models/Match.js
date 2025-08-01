@@ -58,7 +58,7 @@ const matchSchema = mongoose.Schema({
   // ✅ NEW: API-Football match ID
   apiId: {
     type: Number,
-    required: true,
+    required: false, //required only if using API-Football
     unique: true,
   },
 
