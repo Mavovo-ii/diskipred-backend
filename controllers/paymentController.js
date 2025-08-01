@@ -32,11 +32,17 @@ console.log("💬 NOTIFY_URL:", NOTIFY_URL);
 
 // ✅ Initiate Payfast Payment - returns redirect URL
 export const initiatePayfastPayment = asyncHandler(async (req, res) => {
-  const { amount } = req.body;
-  const user = req.user;
+  console.log("💬 Initiating Payfast payment with body:", req.body);
+  const { amount, userEmail, userId } = req.body;
 
-  if (!amount || !user) {
+  if (!amount || !userEmail || !userId) {
+    console.warn("⚠️ Missing payment info");
     return res.status(400).json({ message: 'Missing payment info' });
+  }
+
+  const user = await User.findById(userId);
+  if (!user) {
+    return res.status(404).json({ message: 'User not found' });
   }
 
   const paymentData = {
@@ -47,7 +53,7 @@ export const initiatePayfastPayment = asyncHandler(async (req, res) => {
     notify_url: NOTIFY_URL,
     amount: parseFloat(amount).toFixed(2),
     item_name: 'DiskiPred Top-up',
-    email_address: user.email,
+    email_address: userEmail,
     custom_str1: user._id.toString(),
   };
 
@@ -56,6 +62,7 @@ export const initiatePayfastPayment = asyncHandler(async (req, res) => {
 
   return res.status(200).json({ redirectUrl });
 });
+
 
 // ✅ Handle IPN Notifications
 export const payfastNotifyHandler = asyncHandler(async (req, res) => {
