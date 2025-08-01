@@ -1,5 +1,3 @@
-
-import qs from 'querystring';
 import asyncHandler from 'express-async-handler';
 import dotenv from 'dotenv';
 import User from '../models/User.js';
@@ -57,12 +55,12 @@ export const initiatePayfastPayment = asyncHandler(async (req, res) => {
     custom_str1: user._id.toString(),
   };
 
-  const queryString = qs.stringify(paymentData);
+  // Use URLSearchParams for safe query string encoding
+  const queryString = new URLSearchParams(paymentData).toString();
   const redirectUrl = `https://sandbox.payfast.co.za/eng/process?${queryString}`;
 
   return res.status(200).json({ redirectUrl });
 });
-
 
 // ✅ Handle IPN Notifications
 export const payfastNotifyHandler = asyncHandler(async (req, res) => {
