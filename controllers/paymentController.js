@@ -1,3 +1,4 @@
+
 import asyncHandler from 'express-async-handler';
 import dotenv from 'dotenv';
 import User from '../models/User.js';
@@ -28,7 +29,30 @@ console.log("💬 RETURN_URL:", RETURN_URL);
 console.log("💬 CANCEL_URL:", CANCEL_URL);
 console.log("💬 NOTIFY_URL:", NOTIFY_URL);
 
-// ✅ Initiate Payfast Payment - returns redirect URL
+// Helper to build the Payfast form HTML string
+function buildPayfastForm(paymentData) {
+  const inputs = Object.entries(paymentData)
+    .map(
+      ([key, value]) =>
+        `<input type="hidden" name="${key}" value="${value}"/>`
+    )
+    .join('\n');
+
+  return `
+    <html>
+      <body>
+        <form id="payfastForm" action="https://sandbox.payfast.co.za/eng/process" method="post">
+          ${inputs}
+        </form>
+        <script>
+          document.getElementById('payfastForm').submit();
+        </script>
+      </body>
+    </html>
+  `;
+}
+
+// ✅ Initiate Payfast Payment - returns auto-submit HTML form
 export const initiatePayfastPayment = asyncHandler(async (req, res) => {
   console.log("💬 Initiating Payfast payment with body:", req.body);
   const { amount, userEmail, userId } = req.body;
@@ -55,11 +79,10 @@ export const initiatePayfastPayment = asyncHandler(async (req, res) => {
     custom_str1: user._id.toString(),
   };
 
-  // Use URLSearchParams for safe query string encoding
-  const queryString = new URLSearchParams(paymentData).toString();
-  const redirectUrl = `https://sandbox.payfast.co.za/eng/process?${queryString}`;
+  const htmlForm = buildPayfastForm(paymentData);
 
-  return res.status(200).json({ redirectUrl });
+  res.set('Content-Type', 'text/html');
+  return res.status(200).send(htmlForm);
 });
 
 // ✅ Handle IPN Notifications
