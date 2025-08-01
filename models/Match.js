@@ -5,6 +5,7 @@ const matchSchema = mongoose.Schema({
   league: {
     type: String,
     required: true,
+    set: v => String(v),  // convert any input to string before saving
   },
 
   homeTeam: {
