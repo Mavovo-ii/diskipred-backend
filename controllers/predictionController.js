@@ -18,7 +18,7 @@ export const getMyPredictions = expressAsyncHandler(async (req, res) => {
   res.status(200).json(predictions);
 });
 
-// Submit multiple predictions (bulk)
+// Submit predictions
 export const submitPredictions = expressAsyncHandler(async (req, res) => {
   const predictions = req.body; // Array of { matchId, outcome }
   const userId = req.user._id;
